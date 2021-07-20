@@ -81,7 +81,7 @@ public final class Reminders {
                 do {
                     reminder.isCompleted = true
                     try Store.save(reminder, commit: true)
-                    print("Completedxxx '\(reminder.title!)'")
+                    print("Completed '\(reminder.title!)'")
                 } catch let error {
                     print("Failed to save reminder with error: \(error)")
                     exit(1)
@@ -99,7 +99,7 @@ public final class Reminders {
                 do {
                     reminder.isCompleted = true
                     try Store.save(reminder, commit: true)
-                    print("Completedxxx '\(reminder.title!)'")
+                    print("Completed '\(reminder.title!)'")
                 } catch let error {
                     print("Failed to save reminder with error: \(error)")
                     exit(1)
