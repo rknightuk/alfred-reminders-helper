@@ -1,6 +1,6 @@
 # reminders-cli
 
-A simple CLI for interacting with OS X reminders.
+A modified version of [reminders-cli](https://github.com/keith/reminders-cli) for use with [Reminders Alfred Workflow](https://github.com/rknightuk/alfred-workflows/tree/main/workflows/reminders)
 
 ## Usage:
 
@@ -40,24 +40,9 @@ $ reminders show Soon
 2: Go to the grocery store (in 10 hours)
 ```
 
-## Installation:
+### Installation
 
-#### With [Homebrew](http://brew.sh/)
-
-```
-$ brew install keith/formulae/reminders-cli
-```
-
-#### From GitHub releases
-
-Download the latest release from
-[here](https://github.com/keith/reminders-cli/releases)
-
-```
-$ tar -zxvf reminders.tar.gz
-$ mv reminders /usr/local/bin
-$ rm reminders.tar.gz
-```
+You don't want this, I promise you. It's only useful for the Alfred workflow.
 
 #### Building manually
 
