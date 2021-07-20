@@ -2,16 +2,16 @@ import EventKit
 import Foundation
 
 private let Store = EKEventStore()
-private let dateFormatter = RelativeDateTimeFormatter()
+private let dateFormatter = DateFormatter()
 private func formattedDueDate(from reminder: EKReminder) -> String? {
-    return reminder.dueDateComponents?.date.map {
-        dateFormatter.localizedString(for: $0, relativeTo: Date())
-    }
+    let dateformat = DateFormatter()
+    dateformat.dateFormat = "yyyy-MM-dd HH:mm"
+    return dateformat.string(from: reminder.dueDateComponents!.date ?? Date())
 }
 
 private func format(_ reminder: EKReminder, at index: Int) -> String {
-    let dateString = formattedDueDate(from: reminder).map { " (\($0))" } ?? ""
-    return "\(index): \(reminder.title ?? "<unknown>")\(dateString)"
+    let dateString = formattedDueDate(from: reminder).map { "\($0)" } ?? ""
+    return "{ \"id\": \"\(index)\", \"title\": \"\(reminder.title ?? "?")\", \"date\": \"\(dateString)\", \"list\": \"\(reminder.calendar.title)\" }"
 }
 
 public final class Reminders {
@@ -34,6 +34,20 @@ public final class Reminders {
         }
     }
 
+    func showUpcoming() {
+        let semaphore = DispatchSemaphore(value: 0)
+
+        self.allReminders() { reminders in
+            for (i, reminder) in reminders.enumerated() {
+                print(format(reminder, at: i))
+            }
+
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+    }
+
     func showListItems(withName name: String) {
         let calendar = self.calendar(withName: name)
         let semaphore = DispatchSemaphore(value: 0)
@@ -49,26 +63,50 @@ public final class Reminders {
         semaphore.wait()
     }
 
-    func complete(itemAtIndex index: Int, onListNamed name: String) {
-        let calendar = self.calendar(withName: name)
+    func complete(itemAtIndex index: Int, onListNamed name: String?) {
+        let calendar = self.maybeCalendar(withName: name ?? "")
         let semaphore = DispatchSemaphore(value: 0)
+        var useSpecificList = true
 
-        self.reminders(onCalendar: calendar) { reminders in
-            guard let reminder = reminders[safe: index] else {
-                print("No reminder at index \(index) on \(name)")
-                exit(1)
+        if name == "RMindAllReminders" { useSpecificList = false }
+
+        if (useSpecificList)
+        {
+            self.reminders(onCalendar: calendar!) { reminders in
+                guard let reminder = reminders[safe: index] else {
+                    print("No reminder at index \(index) on \(name ?? "")")
+                    exit(1)
+                }
+
+                do {
+                    reminder.isCompleted = true
+                    try Store.save(reminder, commit: true)
+                    print("Completedxxx '\(reminder.title!)'")
+                } catch let error {
+                    print("Failed to save reminder with error: \(error)")
+                    exit(1)
+                }
+
+                semaphore.signal()
             }
+        } else {
+            self.allReminders() { reminders in
+                guard let reminder = reminders[safe: index] else {
+                    print("No reminder at index \(index)")
+                    exit(1)
+                }
 
-            do {
-                reminder.isCompleted = true
-                try Store.save(reminder, commit: true)
-                print("Completed '\(reminder.title!)'")
-            } catch let error {
-                print("Failed to save reminder with error: \(error)")
-                exit(1)
+                do {
+                    reminder.isCompleted = true
+                    try Store.save(reminder, commit: true)
+                    print("Completedxxx '\(reminder.title!)'")
+                } catch let error {
+                    print("Failed to save reminder with error: \(error)")
+                    exit(1)
+                }
+
+                semaphore.signal()
             }
-
-            semaphore.signal()
         }
 
         semaphore.wait()
@@ -95,10 +133,26 @@ public final class Reminders {
     private func reminders(onCalendar calendar: EKCalendar,
                                       completion: @escaping (_ reminders: [EKReminder]) -> Void)
     {
-        let predicate = Store.predicateForReminders(in: [calendar])
+        let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: [calendar])
         Store.fetchReminders(matching: predicate) { reminders in
-            let reminders = reminders?
-                .filter { !$0.isCompleted }
+            var reminders = reminders?
+                .filter { $0.dueDateComponents != nil }
+
+            reminders = reminders!.sorted(by: { $0.dueDateComponents!.date ?? Date() < $1.dueDateComponents!.date ?? Date() })
+
+            completion(reminders ?? [])
+        }
+    }
+
+    private func allReminders(completion: @escaping (_ reminders: [EKReminder]) -> Void)
+    {
+        let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: [])
+        Store.fetchReminders(matching: predicate) { reminders in
+            var reminders = reminders?
+                .filter { $0.dueDateComponents != nil }
+
+            reminders = reminders!.sorted(by: { $0.dueDateComponents!.date ?? Date() < $1.dueDateComponents!.date ?? Date() })
+
             completion(reminders ?? [])
         }
     }
@@ -110,6 +164,10 @@ public final class Reminders {
             print("No reminders list matching \(name)")
             exit(1)
         }
+    }
+
+    private func maybeCalendar(withName name: String) -> EKCalendar? {
+        return self.getCalendars().find(where: { $0.title.lowercased() == name.lowercased() })
     }
 
     private func getCalendars() -> [EKCalendar] {

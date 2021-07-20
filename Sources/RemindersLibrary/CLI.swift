@@ -12,6 +12,15 @@ private struct ShowLists: ParsableCommand {
     }
 }
 
+private struct Upcoming: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Show upcoming reminders")
+
+    func run() {
+        reminders.showUpcoming()
+    }
+}
+
 private struct Show: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Print the items on the given list")
@@ -77,6 +86,7 @@ public struct CLI: ParsableCommand {
             Complete.self,
             Show.self,
             ShowLists.self,
+            Upcoming.self,
         ]
     )
 
