@@ -34,6 +34,19 @@ private struct Show: ParsableCommand {
     }
 }
 
+private struct Anytime: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Print the anytime items on the given list")
+
+    @Argument(
+        help: "The list to print items from, see 'show-lists' for names")
+    var listName: String
+
+    func run() {
+        reminders.showAnytimeListItems(withName: self.listName)
+    }
+}
+
 private struct Add: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Add a reminder to a list")
@@ -72,8 +85,12 @@ private struct Complete: ParsableCommand {
         help: "The index of the reminder to complete, see 'show' for indexes")
     var index: Int
 
+    @Argument(
+        help: "Complete an anytime reminder")
+    var anytime: Bool?
+
     func run() {
-        reminders.complete(itemAtIndex: self.index, onListNamed: self.listName)
+        reminders.complete(itemAtIndex: self.index, onListNamed: self.listName, anytime: self.anytime)
     }
 }
 
@@ -87,6 +104,7 @@ public struct CLI: ParsableCommand {
             Show.self,
             ShowLists.self,
             Upcoming.self,
+            Anytime.self,
         ]
     )
 

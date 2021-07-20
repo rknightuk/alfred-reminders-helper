@@ -4,6 +4,7 @@ import Foundation
 private let Store = EKEventStore()
 private let dateFormatter = DateFormatter()
 private func formattedDueDate(from reminder: EKReminder) -> String? {
+    if reminder.dueDateComponents == nil { return "" }
     let dateformat = DateFormatter()
     dateformat.dateFormat = "yyyy-MM-dd HH:mm"
     return dateformat.string(from: reminder.dueDateComponents!.date ?? Date())
@@ -63,15 +64,49 @@ public final class Reminders {
         semaphore.wait()
     }
 
-    func complete(itemAtIndex index: Int, onListNamed name: String?) {
+    func showAnytimeListItems(withName name: String) {
+        let calendar = self.calendar(withName: name)
+        let semaphore = DispatchSemaphore(value: 0)
+
+        self.anytimeReminders(onCalendar: calendar) { reminders in
+            for (i, reminder) in reminders.enumerated() {
+                print(format(reminder, at: i))
+            }
+
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+    }
+
+    func complete(itemAtIndex index: Int, onListNamed name: String?, anytime: Bool?) {
         let calendar = self.maybeCalendar(withName: name ?? "")
         let semaphore = DispatchSemaphore(value: 0)
         var useSpecificList = true
+        let isAnytime = anytime ?? false
 
         if name == "RMindAllReminders" { useSpecificList = false }
 
-        if (useSpecificList)
+        if (isAnytime)
         {
+            self.anytimeReminders(onCalendar: calendar!) { reminders in
+                guard let reminder = reminders[safe: index] else {
+                    print("No reminder at index \(index)")
+                    exit(1)
+                }
+
+                do {
+                    reminder.isCompleted = true
+                    try Store.save(reminder, commit: true)
+                    print("Completed '\(reminder.title!)'")
+                } catch let error {
+                    print("Failed to save reminder with error: \(error)")
+                    exit(1)
+                }
+
+                semaphore.signal()
+            }
+        } else if (useSpecificList) {
             self.reminders(onCalendar: calendar!) { reminders in
                 guard let reminder = reminders[safe: index] else {
                     print("No reminder at index \(index) on \(name ?? "")")
@@ -139,6 +174,18 @@ public final class Reminders {
                 .filter { $0.dueDateComponents != nil }
 
             reminders = reminders!.sorted(by: { $0.dueDateComponents!.date ?? Date() < $1.dueDateComponents!.date ?? Date() })
+
+            completion(reminders ?? [])
+        }
+    }
+
+    private func anytimeReminders(onCalendar calendar: EKCalendar,
+                                      completion: @escaping (_ reminders: [EKReminder]) -> Void)
+    {
+        let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: [calendar])
+        Store.fetchReminders(matching: predicate) { reminders in
+            let reminders = reminders?
+                .filter { $0.dueDateComponents == nil }
 
             completion(reminders ?? [])
         }
