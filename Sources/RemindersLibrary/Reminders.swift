@@ -168,7 +168,7 @@ public final class Reminders {
     private func reminders(onCalendar calendar: EKCalendar,
                                       completion: @escaping (_ reminders: [EKReminder]) -> Void)
     {
-        let nextFiveDays = Date(timeIntervalSinceNow: +3*24*3600)
+        let nextFiveDays = Date(timeIntervalSinceNow: +5*24*3600)
         let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nextFiveDays, calendars: [calendar])
         Store.fetchReminders(matching: predicate) { reminders in
             var reminders = reminders?
@@ -194,7 +194,7 @@ public final class Reminders {
 
     private func allReminders(completion: @escaping (_ reminders: [EKReminder]) -> Void)
     {
-        let nextFiveDays = Date(timeIntervalSinceNow: +3*24*3600)
+        let nextFiveDays = Date(timeIntervalSinceNow: +5*24*3600)
         let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nextFiveDays, calendars: [])
         Store.fetchReminders(matching: predicate) { reminders in
             var reminders = reminders?
