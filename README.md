@@ -1,4 +1,4 @@
-# reminders-cli
+# alfred-reminders-helper
 
 A modified version of [reminders-cli](https://github.com/keith/reminders-cli) for use with [Reminders Alfred Workflow](https://github.com/rknightuk/alfred-workflows/tree/main/workflows/reminders)
 
