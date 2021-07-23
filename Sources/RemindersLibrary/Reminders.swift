@@ -35,10 +35,10 @@ public final class Reminders {
         }
     }
 
-    func showUpcoming() {
+    func showUpcoming(limit: Int?) {
         let semaphore = DispatchSemaphore(value: 0)
 
-        self.allReminders() { reminders in
+        self.allReminders(limit: limit) { reminders in
             for (i, reminder) in reminders.enumerated() {
                 print(format(reminder, at: i))
             }
@@ -125,7 +125,7 @@ public final class Reminders {
                 semaphore.signal()
             }
         } else {
-            self.allReminders() { reminders in
+            self.allReminders(limit: nil) { reminders in
                 guard let reminder = reminders[safe: index] else {
                     print("No reminder at index \(index)")
                     exit(1)
@@ -192,10 +192,11 @@ public final class Reminders {
         }
     }
 
-    private func allReminders(completion: @escaping (_ reminders: [EKReminder]) -> Void)
+    private func allReminders(limit: Int?, completion: @escaping (_ reminders: [EKReminder]) -> Void)
     {
-        let nextFiveDays = Date(timeIntervalSinceNow: +5*24*3600)
-        let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nextFiveDays, calendars: [])
+        let days:TimeInterval = Double((limit == nil ? 5 : limit!)*24*3600)
+        let next = Date(timeIntervalSinceNow: +days)
+        let predicate = Store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: next, calendars: [])
         Store.fetchReminders(matching: predicate) { reminders in
             var reminders = reminders?
                 .filter { $0.dueDateComponents != nil }

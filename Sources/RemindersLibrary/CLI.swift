@@ -16,8 +16,13 @@ private struct Upcoming: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Show upcoming reminders")
 
+    @Option(
+        name: .shortAndLong,
+        help: "The amount of days to show")
+    var limit: Int?
+
     func run() {
-        reminders.showUpcoming()
+        reminders.showUpcoming(limit: self.limit)
     }
 }
 
