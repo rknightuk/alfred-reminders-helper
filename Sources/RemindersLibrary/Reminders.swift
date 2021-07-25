@@ -12,7 +12,7 @@ private func formattedDueDate(from reminder: EKReminder) -> String? {
 
 private func format(_ reminder: EKReminder, at index: Int) -> String {
     let dateString = formattedDueDate(from: reminder).map { "\($0)" } ?? ""
-    return "{ \"id\": \"\(index)\", \"title\": \"\(reminder.title ?? "?")\", \"date\": \"\(dateString)\", \"list\": \"\(reminder.calendar.title)\" }"
+    return "{ \"uuid\": \"\(reminder.calendarItemIdentifier)\", \"id\": \"\(index)\", \"title\": \"\(reminder.title ?? "?")\", \"date\": \"\(dateString)\", \"list\": \"\(reminder.calendar.title)\" }"
 }
 
 public final class Reminders {
