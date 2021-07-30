@@ -52,6 +52,8 @@ public final class CalendarEvents {
 
         let events = Store.events(matching: predicate)
 
+        if events.count == 0 { semaphore.signal() }
+
         for event in events {
             print(format(event))
             semaphore.signal()

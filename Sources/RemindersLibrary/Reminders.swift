@@ -79,6 +79,22 @@ public final class Reminders {
         semaphore.wait()
     }
 
+    func completeByUuid(uuid: String) {
+        guard let reminder = Store.calendarItem(withIdentifier: uuid) as! EKReminder? else {
+            print("No reminder found")
+            exit(1)
+        }
+        
+        do {
+            reminder.isCompleted = true
+            try Store.save(reminder, commit: true)
+            print("Completed '\(reminder.title!)'")
+        } catch let error {
+            print("Failed to save reminder with error: \(error)")
+            exit(1)
+        }
+    }
+
     func complete(itemAtIndex index: Int, onListNamed name: String?, anytime: Bool?) {
         let calendar = self.maybeCalendar(withName: name ?? "")
         let semaphore = DispatchSemaphore(value: 0)

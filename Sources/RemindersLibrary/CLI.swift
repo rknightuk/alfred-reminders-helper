@@ -100,6 +100,19 @@ private struct Complete: ParsableCommand {
     }
 }
 
+private struct CompleteByUuid: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Complete a reminder")
+
+    @Argument(
+        help: "The uuid of the reminder to complete")
+    var uuid: String
+
+    func run() {
+        reminders.completeByUuid(uuid: self.uuid)
+    }
+}
+
 private struct Events: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Show upcoming events")
@@ -179,6 +192,7 @@ public struct CLI: ParsableCommand {
             Calendars.self,
             Events.self,
             AddEvent.self,
+            CompleteByUuid.self,
         ]
     )
 
