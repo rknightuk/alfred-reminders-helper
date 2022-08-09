@@ -48,3 +48,14 @@ extension DateComponents: ExpressibleByArgument {
           }
       }
 }
+
+extension URL: ExpressibleByArgument {
+      public init?(argument: String) {
+          if let url = URL(string: argument) {
+              self = url
+          } else {
+              return nil
+          }
+      }
+}
+

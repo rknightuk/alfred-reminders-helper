@@ -71,11 +71,42 @@ private struct AddReminder: ParsableCommand {
         help: "The date the reminder is due")
     var dueDate: DateComponents?
 
+    @Option(
+        name: .shortAndLong,
+        help: "The reminder URL")
+    var url: URL?
+
+    @Option(
+        name: .shortAndLong,
+        help: "The reminder location")
+    var location: String?
+
+    @Option(
+        name: .shortAndLong,
+        help: "The reminder notes")
+    var notes: String?
+
+    @Option(
+        name: .shortAndLong,
+        help: "The reminder priority")
+    var priority: Int = 0
+
+    func validate() throws {
+        guard priority >= 0 && priority <= 9 else {
+            throw ValidationError("'priority' must be between 0 and 9 (inclusive)")
+        }
+    }
+
     func run() {
         reminders.addReminder(
             string: self.reminder.joined(separator: " "),
             toListNamed: self.listName,
-            dueDate: self.dueDate)
+            dueDate: self.dueDate,
+            url: self.url,
+            notes: self.notes,
+            priority: self.priority,
+            location: self.location
+        )
     }
 }
 

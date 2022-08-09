@@ -65,4 +65,12 @@ final class NaturalLanguageTests: XCTestCase {
     func testIgnoreRandomString() {
         XCTAssertNil(DateComponents(argument: "blah tomorrow 9pm"))
     }
+
+    func testUrl() {
+        XCTAssertNotNil(URL(string: "https://www.github.com"))
+    }
+
+    func testUrlWithoutDomain() {
+        XCTAssertNotNil(URL(string: "www.github.com"))
+    }
 }
