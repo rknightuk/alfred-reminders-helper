@@ -10,12 +10,70 @@ private func formattedDueDateEvent(from date: Date) -> String? {
     return dateformat.string(from: date)
 }
 
+private func meeting_url(_ event: EKEvent) -> String {
+    let regexes = [
+        "https://teams\\.microsoft\\.com/l/meetup-join/[a-zA-Z0-9/%?&amp;=._-]+",
+        "https://teams\\.live\\.com/meet/[a-z0-9]+",
+        "https://[a-z0-9]+\\.zoom\\.us/[a-z0-9_.-]+/\\d+\\?pwd=[a-z0-9]+",
+        "https://([a-z0-9]+\\.)?zoom\\.us/j/\\d+(\\?pwd=[a-z0-9]+)?",
+    ]
+
+    let fields = [
+        event.url == nil ? "" : event.url!.absoluteString,
+        event.structuredLocation == nil ? "" : event.structuredLocation!.title!,
+        event.notes == nil ? "" : event.notes!,
+    ]
+
+    for field in fields {
+        for pattern in regexes {
+            do {
+                let regex = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+                let range = NSRange(field.startIndex..<field.endIndex, in: field)
+            if let match = regex.firstMatch(in: field, options: [], range: range) {
+                return String(field[Range(match.range, in: field)!])
+            }
+            } catch {
+                print("Invalid regex pattern: \(error)")
+            }
+        }
+    }
+
+    return ""
+}
+
+struct Event: Codable {
+    var id: String
+    var title: String
+    var start: String
+    var end: String
+    var allDay: String
+    var location: String
+    var calendar: String
+    var confirmed: String
+    var meeting_url: String
+}
+
 private func format(_ event: EKEvent) -> String {
     let start = formattedDueDateEvent(from: event.startDate).map { "\($0)" } ?? ""
     let end = formattedDueDateEvent(from: event.endDate).map { "\($0)" } ?? ""
     var location = event.structuredLocation == nil ? "" : event.structuredLocation!.title!
     location = location.replacingOccurrences(of: "\n", with: ", ")
-    return "{ \"id\": \"\(event.eventIdentifier!)\", \"title\": \"\(event.title ?? "?")\", \"start\": \"\(start)\", \"end\": \"\(end)\", \"allDay\": \"\(event.isAllDay)\", \"location\": \"\(location)\", \"calendar\": \"\(event.calendar.title)\", \"confirmed\": \"\(event.status == EKEventStatus.none || event.status == EKEventStatus.confirmed)\" }"
+
+    let event = Event(
+        id: event.eventIdentifier!,
+        title: event.title ?? "?",
+        start: start,
+        end: end,
+        allDay: "\(event.isAllDay)",
+        location: location,
+        calendar: event.calendar.title,
+        confirmed: "\(event.status == EKEventStatus.none || event.status == EKEventStatus.confirmed)",
+        meeting_url: meeting_url(event)
+    )
+
+    let encoder = JSONEncoder()
+    let jsonData = try! encoder.encode(event)
+    return String(data: jsonData, encoding: .utf8)!
 }
 
 public final class CalendarEvents {
