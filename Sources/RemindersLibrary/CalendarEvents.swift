@@ -41,25 +41,39 @@ private func meeting_url(_ event: EKEvent) -> String {
     return ""
 }
 
+struct Event: Codable {
+    var id: String
+    var title: String
+    var start: String
+    var end: String
+    var allDay: String
+    var location: String
+    var calendar: String
+    var confirmed: String
+    var meeting_url: String
+}
+
 private func format(_ event: EKEvent) -> String {
     let start = formattedDueDateEvent(from: event.startDate).map { "\($0)" } ?? ""
     let end = formattedDueDateEvent(from: event.endDate).map { "\($0)" } ?? ""
     var location = event.structuredLocation == nil ? "" : event.structuredLocation!.title!
     location = location.replacingOccurrences(of: "\n", with: ", ")
 
-    return """
-    {
-        \"id\": \"\(event.eventIdentifier!)\",
-        \"title\": \"\(event.title ?? "?")\",
-        \"start\": \"\(start)\",
-        \"end\": \"\(end)\",
-        \"allDay\": \"\(event.isAllDay)\",
-        \"location\": \"\(location)\",
-        \"calendar\": \"\(event.calendar.title)\",
-        \"confirmed\": \"\(event.status == EKEventStatus.none || event.status == EKEventStatus.confirmed)\" ,
-        \"meeting_url\": \"\(meeting_url(event))\"
-    }
-    """.replacingOccurrences(of: "\n", with: "")
+    let event = Event(
+        id: event.eventIdentifier!,
+        title: event.title ?? "?",
+        start: start,
+        end: end,
+        allDay: "\(event.isAllDay)",
+        location: location,
+        calendar: event.calendar.title,
+        confirmed: "\(event.status == EKEventStatus.none || event.status == EKEventStatus.confirmed)",
+        meeting_url: meeting_url(event)
+    )
+
+    let encoder = JSONEncoder()
+    let jsonData = try! encoder.encode(event)
+    return String(data: jsonData, encoding: .utf8)!
 }
 
 public final class CalendarEvents {
